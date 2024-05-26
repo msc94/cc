@@ -1,34 +1,29 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufReader, Read},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use clap::Parser;
 
 /// This is a simple example of using clap with derive
 #[derive(Parser, Debug)]
-#[command(name = "ccwc")]
+#[command(name = "huffman")]
 struct Cli {
-    #[arg(short, long)]
-    count: bool,
-
-    #[arg(short, long)]
-    lines: bool,
-
-    input: String,
+    file: PathBuf,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    ensure!(cli.file.exists());
 
-    let filepath = Path::new(&cli.input);
+    let filepath = Path::new(&cli.file);
     let file = File::open(filepath)?;
     let mut reader = BufReader::new(file);
 
-    let mut total_bytes: usize = 0;
-    let mut total_lines: usize = 0;
+    let mut frequency = HashMap::new();
 
     let mut buffer = [0; 1024];
     loop {
@@ -39,21 +34,21 @@ fn main() -> Result<()> {
         }
 
         for i in 0..num_read {
-            let c = buffer[i];
-            if c == b'\n' {
-                total_lines += 1;
-            }
+            let byte = buffer[i];
+            let entry = frequency.entry(byte).or_insert(0usize);
+            *entry += 1;
         }
-
-        total_bytes += num_read;
     }
 
-    if cli.count {
-        print!("{} {}\n", total_bytes, &cli.input);
-    }
+    let mut entries: Vec<(_, _)> = frequency.iter().collect();
+    entries.sort_by_key(|&(_, v)| v);
 
-    if cli.lines {
-        print!("{} {}\n", total_lines, &cli.input);
+    for (k, v) in &entries {
+        if k.is_ascii_alphabetic() {
+            print!("{} -> {}\n", **k as char, v);
+        } else {
+            print!("{} -> {}\n", k, v);
+        }
     }
 
     Ok(())
