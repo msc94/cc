@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0.86", features = ["backtrace"] }
+bitvec = { version = "1.0.1", features = ["alloc"] }
 clap = { version = "4.5.4", features = ["derive"] }
